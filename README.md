@@ -1,10 +1,10 @@
-# 🚀 DevEnv MCP Server
+# DevEnv MCP Server
 
 An MCP (Model Context Protocol) server that provisions **Docker-based development environments** on demand.
 
 Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, manage, and inspect containerized dev environments — completely hands-free. No more manual setup of Node, Python, or Docker Compose for every new project.
 
-## ✨ Features
+## Features
 
 - **Instant Scaffolding:** Create full-stack projects (Next.js, Flask, FastAPI, etc.) with one command.
 - **Docker Isolation:** Every environment runs in its own container, keeping your host machine clean.
@@ -12,7 +12,7 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
 - **Hands-free Dependencies:** The AI automatically installs required packages and sets up the environment.
 - **Universal IDE Support:** Works with VS Code (Gemini), Claude Desktop, Cursor, Windsurf, and Claude CLI.
 
-## 🛠️ Supported Stacks
+## Supported Stacks
 
 | Stack | Framework | Base Image | Default Port |
 |---|---|---|---|
@@ -25,12 +25,12 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
 | `express` | Express.js | `node:20-slim` | 3000 |
 | `static-html` | Static HTML/CSS/JS | `node:20-slim` | 8080 |
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Docker** with `docker compose` v2 installed and running.
 - **Python 3.10+** with `pip`.
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Clone and Install:**
    ```bash
@@ -44,7 +44,7 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
 3. **Start Creating:** Ask your AI agent:
    > "Create a new Next.js project called 'my-portfolio' using the devenv tool."
 
-## 🔌 IDE Integration
+## IDE Integration
 
 ### Gemini Code Assist (VS Code)
 Add to your VS Code `settings.json`:
@@ -76,7 +76,7 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
 ### Cursor / Windsurf / Claude CLI
 The server supports the standard MCP protocol via `stdio`. Use the path to `server.py` in your configuration.
 
-## 🧰 Available Tools
+## Available Tools
 
 | Tool | Description |
 |---|---|
@@ -89,7 +89,7 @@ The server supports the standard MCP protocol via `stdio`. Use the path to `serv
 | `exec_command` | Run a command inside a container |
 | `get_environment_info` | Get detailed environment info |
 
-## ⚙️ How It Works
+## How It Works
 
 1. **Request:** The AI agent identifies a stack requirement (e.g., "I want a Flask app").
 2. **Execution:** It calls `create_environment(project_name="app", stack="flask")`.
@@ -100,7 +100,7 @@ The server supports the standard MCP protocol via `stdio`. Use the path to `serv
    - Starts the container and installs dependencies.
 4. **Synchronization:** The project folder is volume-mounted, so your IDE edits reflect instantly in the running container.
 
-## 🧪 Development
+## Development
 
 To test the server manually:
 ```bash
@@ -112,5 +112,5 @@ npx @modelcontextprotocol/inspector python3 server.py
 ```
 
 ---
-Built with ❤️ for the AI-First Developer Workflow.
+Built for the AI-First Developer Workflow.
 
