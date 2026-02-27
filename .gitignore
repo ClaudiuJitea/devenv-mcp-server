@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.devenv.json
+# Ignore projects created by the server
+# (Assuming projects are created in subdirectories)
+/*/
+!/README.md
+!/server.py
+!/docker_manager.py
+!/stacks.py
+!/requirements.txt
+!/.gitignore
