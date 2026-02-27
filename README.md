@@ -53,7 +53,7 @@ Add to your VS Code `settings.json`:
   "gemini.mcp.servers": {
     "devenv": {
       "command": "python3",
-      "args": ["/absolute/path/to/server.py"],
+      "args": ["/home/clau/MCP/server.py"],
       "env": {}
     }
   }
