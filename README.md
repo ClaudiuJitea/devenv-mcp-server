@@ -24,6 +24,13 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
 | `vite-vue` | Vite + Vue | `node:20-slim` | 5173 |
 | `express` | Express.js | `node:20-slim` | 3000 |
 | `static-html` | Static HTML/CSS/JS | `node:20-slim` | 8080 |
+| `laravel` | Laravel (PHP) | `php:8.3-fpm-alpine` | 8000 |
+| `symfony` | Symfony (PHP) | `php:8.3-fpm-alpine` | 8000 |
+| `nestjs` | NestJS (Node.js) | `node:22-slim` | 3000 |
+| `bun-hono` | Hono (Bun) | `oven/bun:1-alpine` | 3000 |
+| `rust-axum` | Axum/Actix (Rust) | `rust:1-slim` | 8080 |
+| `go-gin` | Gin/Fiber (Go) | `golang:1.24-alpine` | 8080 |
+| `nginx-static` | Nginx (Static Assets) | `nginx:alpine` | 80 |
 
 ## Prerequisites
 
