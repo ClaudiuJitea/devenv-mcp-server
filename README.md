@@ -8,8 +8,10 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
 
 - **Instant Scaffolding:** Create full-stack projects (Next.js, Flask, FastAPI, etc.) with one command.
 - **Docker Isolation:** Every environment runs in its own container, keeping your host machine clean.
-- **Hot Reloading:** Multi-stage Dockerfiles configured for development with HMR and auto-reload.
+- **Two Workspace Modes:** `isolated` (default, container-only files) or `mapped` (bind-mounted host files).
 - **Hands-free Dependencies:** The AI automatically installs required packages and sets up the environment.
+- **Direct File Access:** `write_file` and `read_file` tools let the agent modify files inside the container.
+- **Portable Export:** `export_environment` snapshots an environment into a Docker image tarball.
 - **Universal IDE Support:** Works with VS Code (Gemini), Claude Desktop, Cursor, Windsurf, and Claude CLI.
 
 ## Supported Stacks
@@ -46,7 +48,7 @@ Any AI agent (Claude, Gemini, Cursor, etc.) can call these tools to create, mana
    pip install -r requirements.txt
    ```
 
-2. **Configure your IDE:** (See [IDE Integration](#-ide-integration) below)
+2. **Configure your IDE:** (See [IDE Integration](#ide-integration) below)
 
 3. **Start Creating:** Ask your AI agent:
    > "Create a new Next.js project called 'my-portfolio' using the devenv tool."
@@ -60,7 +62,7 @@ Add to your VS Code `settings.json`:
   "gemini.mcp.servers": {
     "devenv": {
       "command": "python3",
-      "args": ["/home/clau/MCP/server.py"],
+      "args": ["/absolute/path/to/server.py"],
       "env": {}
     }
   }
@@ -92,20 +94,47 @@ The server supports the standard MCP protocol via `stdio`. Use the path to `serv
 | `list_environments` | List all environments and their status |
 | `start_environment` | Start a stopped environment |
 | `stop_environment` | Stop a running environment |
-| `destroy_environment` | Remove environment (optionally with files) |
+| `destroy_environment` | Remove environment, container, volumes, associated images, and files by default |
 | `exec_command` | Run a command inside a container |
+| `write_file` | Write/create a file inside a container's /app |
+| `read_file` | Read a file from a container's /app |
 | `get_environment_info` | Get detailed environment info |
+| `export_environment` | Export a portable image tar and generate deploy scripts |
+
+## Workspace Modes
+
+`create_environment` supports `workspace_mode`:
+
+- `isolated` (default): no host bind mount. Source code, dependencies, and generated files stay inside the container.
+- `mapped`: bind-mount project files from `~/devenv-projects/<project>` to `/app` for direct host editing.
+
+Recommended default is `isolated` when you want portability and host isolation.
 
 ## How It Works
 
 1. **Request:** The AI agent identifies a stack requirement (e.g., "I want a Flask app").
-2. **Execution:** It calls `create_environment(project_name="app", stack="flask")`.
+2. **Execution:** It calls `create_environment(project_name="app", stack="flask", workspace_mode="isolated")`.
 3. **Provisioning:** The MCP server:
-   - Creates a project directory.
-   - Generates optimized `Dockerfile` and `docker-compose.yml`.
-   - Scaffolds initial boilerplate files.
-   - Starts the container and installs dependencies.
-4. **Synchronization:** The project folder is volume-mounted, so your IDE edits reflect instantly in the running container.
+   - Creates a project directory at `~/devenv-projects/<project>/`.
+   - Generates Dockerfile, compose, and metadata files.
+   - Builds and starts a dedicated container for that project.
+   - Runs stack-specific initialization commands when required.
+4. **Editing Workflow:**
+   - In `isolated` mode, use `write_file`, `read_file`, and `exec_command` to work entirely in-container.
+   - In `mapped` mode, edit files directly from the host and they reflect in the container.
+5. **Portability:** Call `export_environment` to snapshot and save a tarball (`docker load -i ...` on another machine). In mapped mode, export automatically captures mapped host files into an isolated image first. The export also writes `deploy-<project>.sh` and `deploy-<project>.ps1` next to the tar.
+
+## Directory Structure
+
+```
+~/devenv-projects/
+└── my-project/
+    ├── Dockerfile
+    ├── docker-compose.yml
+    ├── .devenv.json
+    ├── app.py            # or stack scaffold files
+    └── ...
+```
 
 ## Development
 
@@ -120,4 +149,3 @@ npx @modelcontextprotocol/inspector python3 server.py
 
 ---
 Built for the AI-First Developer Workflow.
-

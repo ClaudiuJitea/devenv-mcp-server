@@ -42,13 +42,8 @@ def flask_stack() -> StackTemplate:
         dockerfile="""\
 FROM python:3.12-slim
 WORKDIR /app
-RUN pip install --no-cache-dir flask watchdog
-RUN chmod -R 777 /usr/local
 COPY . .
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
-EXPOSE 5000
-CMD ["flask", "run", "--host=0.0.0.0", "--reload"]
+CMD ["sh", "-c", "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && flask run --host=0.0.0.0 --reload || tail -f /dev/null"]
 """,
         scaffold_files={
             "app.py": """\
@@ -61,18 +56,12 @@ app = Flask(__name__)
 def hello():
     return "<h1>Hello from Flask!</h1><p>Your dev environment is ready.</p>"
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", debug=True, port=5000)
 """,
-            "requirements.txt": """\
-flask
-watchdog
-""",
+            "requirements.txt": "flask\nwatchdog\n",
         },
-        init_commands=[
-            "pip install --no-cache-dir -r requirements.txt",
-        ],
+        init_commands=[],
     )
 
 
@@ -87,18 +76,15 @@ def django_stack() -> StackTemplate:
         dockerfile="""\
 FROM python:3.12-slim
 WORKDIR /app
-RUN pip install --no-cache-dir django
-RUN chmod -R 777 /usr/local
 COPY . .
-EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && if [ -f manage.py ]; then python manage.py runserver 0.0.0.0:8000; else tail -f /dev/null; fi"]
 """,
         scaffold_files={
             "requirements.txt": "django\n",
         },
         init_commands=[
-            "pip install --no-cache-dir django",
-            "django-admin startproject project .",
+            "django-admin startproject project tmp_app",
+            "cp -a tmp_app/. . && rm -rf tmp_app",
         ],
     )
 
@@ -114,11 +100,8 @@ def fastapi_stack() -> StackTemplate:
         dockerfile="""\
 FROM python:3.12-slim
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn[standard]
-RUN chmod -R 777 /usr/local
 COPY . .
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload"]
+CMD ["sh", "-c", "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && uvicorn main:app --host 0.0.0.0 --reload || tail -f /dev/null"]
 """,
         scaffold_files={
             "main.py": """\
@@ -126,19 +109,13 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello from FastAPI! Your dev environment is ready."}
 """,
-            "requirements.txt": """\
-fastapi
-uvicorn[standard]
-""",
+            "requirements.txt": "fastapi\nuvicorn[standard]\n",
         },
-        init_commands=[
-            "pip install --no-cache-dir -r requirements.txt",
-        ],
+        init_commands=[],
     )
 
 
@@ -152,20 +129,19 @@ def nextjs_stack() -> StackTemplate:
         name="nextjs",
         display_name="Next.js",
         description="Next.js React framework with hot-reload",
-        base_image="node:20-slim",
+        base_image="node:20",
         default_port=3000,
         dockerfile="""\
-FROM node:20-slim
+FROM node:20
 WORKDIR /app
-RUN chmod -R 777 /usr/local
+COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "if [ -f package.json ]; then npm install && npm run dev; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
-            "npx -y create-next-app@latest ./ --ts --tailwind "
-            "--eslint --app --src-dir --import-alias '@/*' --yes",
+            "npx -y create-next-app@latest tmp_app --ts --tailwind --eslint --app --src-dir --import-alias '@/*' --yes",
+            "cp -a tmp_app/. . && rm -rf tmp_app",
         ],
     )
 
@@ -176,19 +152,18 @@ def vite_react_stack() -> StackTemplate:
         name="vite-react",
         display_name="Vite + React",
         description="Vite-powered React app with HMR",
-        base_image="node:20-slim",
+        base_image="node:20",
         default_port=5173,
         dockerfile="""\
-FROM node:20-slim
+FROM node:20
 WORKDIR /app
-RUN chmod -R 777 /usr/local
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host"]
+COPY . .
+CMD ["sh", "-c", "if [ -f package.json ]; then npm install && npm run dev -- --host; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
-            "npm create vite@latest ./ -- --template react",
-            "npm install",
+            "npm create vite@latest tmp_app -- --template react",
+            "cp -a tmp_app/. . && rm -rf tmp_app",
         ],
     )
 
@@ -199,19 +174,18 @@ def vite_vue_stack() -> StackTemplate:
         name="vite-vue",
         display_name="Vite + Vue",
         description="Vite-powered Vue.js app with HMR",
-        base_image="node:20-slim",
+        base_image="node:20",
         default_port=5173,
         dockerfile="""\
-FROM node:20-slim
+FROM node:20
 WORKDIR /app
-RUN chmod -R 777 /usr/local
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host"]
+COPY . .
+CMD ["sh", "-c", "if [ -f package.json ]; then npm install && npm run dev -- --host; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
-            "npm create vite@latest ./ -- --template vue",
-            "npm install",
+            "npm create vite@latest tmp_app -- --template vue",
+            "cp -a tmp_app/. . && rm -rf tmp_app",
         ],
     )
 
@@ -228,10 +202,8 @@ def express_stack() -> StackTemplate:
 FROM node:20-slim
 WORKDIR /app
 RUN npm install -g nodemon
-RUN chmod -R 777 /usr/local
 COPY . .
-EXPOSE 3000
-CMD ["nodemon", "index.js"]
+CMD ["sh", "-c", "if [ -f package.json ]; then npm install && nodemon index.js; else tail -f /dev/null; fi"]
 """,
         scaffold_files={
             "index.js": """\
@@ -266,9 +238,7 @@ app.listen(port, '0.0.0.0', () => {
 }
 """,
         },
-        init_commands=[
-            "npm install",
-        ],
+        init_commands=[],
     )
 
 
@@ -284,9 +254,7 @@ def static_html_stack() -> StackTemplate:
 FROM node:20-slim
 WORKDIR /app
 RUN npm install -g live-server
-RUN chmod -R 777 /usr/local
 COPY . .
-EXPOSE 8080
 CMD ["live-server", "--port=8080", "--host=0.0.0.0"]
 """,
         scaffold_files={
@@ -297,40 +265,12 @@ CMD ["live-server", "--port=8080", "--host=0.0.0.0"]
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Project</title>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Hello World!</h1>
     <p>Your dev environment is ready.</p>
-    <script src="script.js"></script>
 </body>
 </html>
-""",
-            "style.css": """\
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: system-ui, -apple-system, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: #1a1a2e;
-    color: #eee;
-}
-
-h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-""",
-            "script.js": """\
-console.log("Dev environment ready!");
 """,
         },
         init_commands=[],
@@ -354,10 +294,8 @@ FROM php:8.3-fpm-alpine
 WORKDIR /app
 RUN apk add --no-cache curl git zip unzip bash
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN chmod -R 777 /app
 COPY . .
-EXPOSE 8000
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["sh", "-c", "if [ -f artisan ]; then php artisan serve --host=0.0.0.0 --port=8000; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
@@ -381,10 +319,8 @@ RUN apk add --no-cache curl git zip unzip bash
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN curl -sS https://get.symfony.com/cli/installer | bash
 RUN mv /root/.symfony*/bin/symfony /usr/local/bin/symfony
-RUN chmod -R 777 /app
 COPY . .
-EXPOSE 8000
-CMD ["symfony", "server:start", "--port=8000", "--no-tls", "--allow-all-ip"]
+CMD ["sh", "-c", "if [ -f composer.json ]; then symfony server:start --port=8000 --no-tls --allow-all-ip; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
@@ -403,22 +339,19 @@ def nestjs_stack() -> StackTemplate:
         name="nestjs",
         display_name="NestJS",
         description="NestJS Node.js framework with hot-reload",
-        base_image="node:22-slim",
+        base_image="node:22",
         default_port=3000,
         dockerfile="""\
-FROM node:22-slim
+FROM node:22
 WORKDIR /app
 RUN npm install -g @nestjs/cli
-RUN chmod -R 777 /usr/local /app
 COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "start:dev"]
+CMD ["sh", "-c", "if [ -f package.json ]; then npm install && npm run start:dev; else tail -f /dev/null; fi"]
 """,
         scaffold_files={},
         init_commands=[
-            "nest new project --package-manager npm --skip-git",
-            "cp -a project/. . && rm -rf project",
-            "npm install",
+            "nest new tmp_app --package-manager npm --skip-git",
+            "cp -a tmp_app/. . && rm -rf tmp_app",
         ],
     )
 
@@ -433,10 +366,8 @@ def bun_hono_stack() -> StackTemplate:
         dockerfile="""\
 FROM oven/bun:1-alpine
 WORKDIR /app
-RUN chmod -R 777 /app
 COPY . .
-EXPOSE 3000
-CMD ["bun", "run", "--hot", "src/index.ts"]
+CMD ["sh", "-c", "if [ -f package.json ]; then bun install && bun run --hot src/index.ts; else tail -f /dev/null; fi"]
 """,
         scaffold_files={
             "src/index.ts": """\
@@ -480,9 +411,7 @@ export default {
 }
 """
         },
-        init_commands=[
-            "bun install",
-        ],
+        init_commands=[],
     )
 
 # ---------------------------------------------------------------------------
@@ -502,11 +431,8 @@ FROM rust:1-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 RUN cargo install cargo-watch
-RUN chmod -R 777 /usr/local/cargo /app
-ENV CARGO_HOME=/usr/local/cargo
 COPY . .
-EXPOSE 8080
-CMD ["cargo", "watch", "-x", "run"]
+CMD ["sh", "-c", "if [ -f Cargo.toml ]; then cargo watch -x run; else tail -f /dev/null; fi"]
 """,
         scaffold_files={
             "Cargo.toml": """\
@@ -531,9 +457,7 @@ async fn main() {
 }
 """
         },
-        init_commands=[
-            "cargo build",
-        ],
+        init_commands=[],
     )
 
 def go_gin_stack() -> StackTemplate:
@@ -548,11 +472,8 @@ def go_gin_stack() -> StackTemplate:
 FROM golang:1.24-alpine
 WORKDIR /app
 RUN go install github.com/air-verse/air@latest
-RUN chmod -R 777 /go /app
-ENV GOPATH=/go
 COPY . .
-EXPOSE 8080
-CMD ["air", "-c", ".air.toml"]
+CMD ["sh", "-c", "if [ -f main.go ]; then air -c .air.toml; else tail -f /dev/null; fi"]
 """,
         scaffold_files={
             "main.go": """\
@@ -612,9 +533,7 @@ def nginx_static_stack() -> StackTemplate:
         dockerfile="""\
 FROM nginx:alpine
 WORKDIR /app
-RUN chmod -R 777 /usr/share/nginx/html
 COPY ./html /usr/share/nginx/html
-EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 """,
         scaffold_files={
